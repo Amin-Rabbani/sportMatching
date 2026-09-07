@@ -1,0 +1,1536 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>برنامه‌ریزی مسابقات کیوکوشین</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #0f1419;
+        --surface: #1a2332;
+        --surface-hover: #243044;
+        --border: #2d3a4f;
+        --text: #e8edf4;
+        --text-muted: #8b9cb3;
+        --accent: #e63946;
+        --accent-hover: #ff4d5a;
+        --accent-soft: rgba(230, 57, 70, 0.15);
+        --success: #2ecc71;
+        --sidebar-w: 280px;
+        --radius: 10px;
+        --shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, "Vazirmatn", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        line-height: 1.6;
+      }
+
+      /* ── Sidebar ── */
+      .sidebar {
+        width: var(--sidebar-w);
+        min-height: 100vh;
+        background: var(--surface);
+        border-left: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        transition: width 0.28s ease;
+        overflow: hidden;
+      }
+
+      .sidebar.is-collapsed {
+        width: 52px;
+        min-width: 52px;
+      }
+
+      .sidebar-header {
+        padding: 1.5rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.5rem;
+        flex-shrink: 0;
+      }
+
+      .sidebar.is-collapsed .sidebar-header {
+        border-bottom: none;
+        justify-content: center;
+        padding: 1rem 0.5rem;
+      }
+
+      .sidebar-header-text {
+        min-width: 0;
+        transition: opacity 0.2s ease;
+      }
+
+      .sidebar.is-collapsed .sidebar-header-text {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        width: 0;
+        height: 0;
+        overflow: hidden;
+      }
+
+      .sidebar-collapsible {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        transition: opacity 0.2s ease;
+      }
+
+      .sidebar.is-collapsed .sidebar-collapsible {
+        display: none;
+      }
+
+      .menu-toggle-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--accent-soft);
+        border: 1px solid var(--accent);
+        border-radius: 8px;
+        color: var(--accent);
+        font-family: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.15s;
+        flex-shrink: 0;
+      }
+
+      .menu-toggle-btn:hover {
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .home-btn {
+        position: fixed;
+        top: 1rem;
+        left: 1rem;
+        z-index: 900;
+        display: none;
+        font-size: 1.15rem;
+        padding: 0.5rem 0.65rem;
+        line-height: 1;
+      }
+
+      .home-btn.is-visible {
+        display: inline-flex;
+      }
+
+      .sidebar-header .menu-toggle-btn {
+        padding: 0.5rem 0.65rem;
+        font-size: 1.1rem;
+        line-height: 1;
+      }
+
+      .sidebar.is-collapsed .sidebar-header .menu-toggle-btn {
+        padding: 0.5rem;
+      }
+
+      .sidebar-header h1 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--accent);
+        letter-spacing: -0.02em;
+      }
+
+      .sidebar-header p {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        margin-top: 0.25rem;
+      }
+
+      .tree {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0.75rem 0;
+      }
+
+      .tree-group {
+        margin-bottom: 0.25rem;
+      }
+
+      .tree-group-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.25rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.15s;
+      }
+
+      .tree-group-title:hover {
+        background: var(--surface-hover);
+      }
+
+      .tree-group-title .arrow {
+        font-size: 0.65rem;
+        transition: transform 0.2s;
+        color: var(--text-muted);
+      }
+
+      .tree-group.collapsed .arrow {
+        transform: rotate(-90deg);
+      }
+      .tree-group.collapsed .tree-children {
+        display: none;
+      }
+
+      .tree-children {
+        padding-right: 0.5rem;
+      }
+
+      .tree-item {
+        display: block;
+        width: 100%;
+        text-align: right;
+        padding: 0.5rem 1.25rem 0.5rem 2rem;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        background: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.15s;
+        border-right: 3px solid transparent;
+      }
+
+      .tree-item:hover {
+        background: var(--surface-hover);
+        color: var(--text);
+      }
+
+      .tree-item.active {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border-right-color: var(--accent);
+        font-weight: 600;
+      }
+
+      .tree-item .count {
+        float: left;
+        font-size: 0.72rem;
+        background: var(--border);
+        color: var(--text-muted);
+        padding: 0.1rem 0.45rem;
+        border-radius: 99px;
+        min-width: 1.4rem;
+        text-align: center;
+      }
+
+      .tree-item.active .count {
+        background: var(--accent);
+        color: #fff;
+      }
+
+      /* ── Main ── */
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+
+      .main-header {
+        padding: 1.25rem 2rem;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+
+      .main-header-text {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .main-header h2 {
+        font-size: 1.25rem;
+        font-weight: 700;
+      }
+
+      .main-header .breadcrumb {
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        margin-top: 0.2rem;
+      }
+
+      .main-body {
+        flex: 1;
+        display: flex;
+        flex-direction: row;
+        gap: 1.5rem;
+        padding: 1.5rem 2rem;
+        overflow: auto;
+      }
+
+      .panel-draw {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .panel-participants {
+        width: min(380px, 38%);
+        flex-shrink: 0;
+        transition: width 0.28s ease;
+        overflow: hidden;
+      }
+
+      .panel-participants .panel-collapsible {
+        transition: opacity 0.2s ease;
+      }
+
+      .main-body.is-collapsed .panel-participants {
+        width: 52px;
+        min-width: 52px;
+      }
+
+      .main-body.is-collapsed .panel-participants .panel-collapsible {
+        opacity: 0;
+        pointer-events: none;
+        visibility: hidden;
+      }
+
+      .main-body.is-collapsed .panel-participants .panel-header {
+        border-bottom: none;
+        justify-content: center;
+        padding: 1rem 0.5rem;
+      }
+
+      .main-body.is-collapsed .panel-participants .panel-header h3 {
+        display: none;
+      }
+
+      .collapse-btn {
+        font-size: 1rem;
+        line-height: 1;
+        padding: 0.35rem 0.55rem;
+      }
+
+      .main-body.is-collapsed .collapse-btn {
+        transform: rotate(180deg);
+      }
+
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        display: flex;
+        flex-direction: column;
+        min-height: 400px;
+      }
+
+      .panel-header {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+
+      .panel-header h3 {
+        font-size: 0.95rem;
+        font-weight: 600;
+      }
+
+      .panel-body {
+        flex: 1;
+        padding: 1.25rem;
+        overflow-y: auto;
+      }
+
+      /* ── Empty state ── */
+      .empty-state {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+        padding: 3rem;
+        text-align: center;
+      }
+
+      .empty-state .icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.4;
+      }
+
+      .empty-state p {
+        font-size: 0.95rem;
+        max-width: 320px;
+      }
+
+      /* ── Participants ── */
+      .add-form {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .add-form input {
+        flex: 1;
+        padding: 0.6rem 0.85rem;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        font-size: 0.9rem;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+
+      .add-form input:focus {
+        border-color: var(--accent);
+      }
+      .add-form input::placeholder {
+        color: var(--text-muted);
+      }
+
+      .btn {
+        padding: 0.6rem 1.1rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-family: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+        white-space: nowrap;
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .btn-primary:hover {
+        background: var(--accent-hover);
+      }
+      .btn-primary:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .btn-ghost {
+        background: transparent;
+        color: var(--text-muted);
+        padding: 0.35rem 0.6rem;
+        font-size: 0.8rem;
+      }
+
+      .btn-ghost:hover {
+        color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      .participant-list {
+        list-style: none;
+      }
+
+      .participant-list li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.65rem 0.85rem;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        animation: fadeIn 0.2s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .participant-list .index {
+        color: var(--text-muted);
+        font-size: 0.78rem;
+        min-width: 1.5rem;
+      }
+
+      .participant-list .name {
+        flex: 1;
+        padding: 0 0.75rem;
+      }
+
+      .list-empty {
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        padding: 2rem 1rem;
+      }
+
+      /* ── Matches ── */
+      .match-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+
+      .match-list {
+        list-style: none;
+      }
+
+      .match-card {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1rem 1.25rem;
+        margin-bottom: 0.75rem;
+        animation: fadeIn 0.25s ease;
+      }
+
+      .match-card .match-num {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+      }
+
+      .match-card .fighters {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        font-size: 1rem;
+        font-weight: 600;
+      }
+
+      .match-card .fighter {
+        flex: 1;
+        text-align: center;
+        padding: 0.5rem;
+        background: var(--surface);
+        border-radius: 8px;
+      }
+
+      .match-card .vs {
+        color: var(--accent);
+        font-size: 0.85rem;
+        font-weight: 800;
+        flex-shrink: 0;
+      }
+
+      .bye-card .fighter.single {
+        text-align: center;
+        color: var(--success);
+      }
+
+      .match-hint {
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 0.82rem;
+        padding: 1.5rem;
+      }
+
+      .sidebar-footer {
+        padding: 0.85rem 1.25rem;
+        border-top: 1px solid var(--border);
+        font-size: 0.78rem;
+        color: var(--text-muted);
+      }
+
+      .sidebar-footer .save-status {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .sidebar-footer .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--text-muted);
+        flex-shrink: 0;
+      }
+
+      .sidebar-footer .dot.live {
+        background: var(--success);
+      }
+
+      .sidebar-footer .btn-link {
+        width: 100%;
+        padding: 0.5rem;
+        font-size: 0.8rem;
+      }
+
+      /* ── Confirm modal ── */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          opacity 0.2s ease,
+          visibility 0.2s ease;
+      }
+
+      .modal-overlay.is-open {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .modal {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        width: min(420px, 100%);
+        padding: 1.5rem;
+        transform: scale(0.95);
+        transition: transform 0.2s ease;
+      }
+
+      .modal-overlay.is-open .modal {
+        transform: scale(1);
+      }
+
+      .modal-icon {
+        font-size: 2rem;
+        text-align: center;
+        margin-bottom: 0.75rem;
+      }
+
+      .modal h4 {
+        font-size: 1.05rem;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 0.75rem;
+      }
+
+      .modal p {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        text-align: center;
+        line-height: 1.7;
+        margin-bottom: 1.25rem;
+        white-space: pre-line;
+      }
+
+      .modal-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+      }
+
+      .btn-secondary {
+        background: var(--border);
+        color: var(--text);
+      }
+
+      .btn-secondary:hover {
+        background: var(--surface-hover);
+      }
+
+      @media (max-width: 900px) {
+        body {
+          flex-direction: column;
+        }
+        .sidebar {
+          width: 100%;
+          min-height: auto;
+          border-left: none;
+          border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar.is-collapsed {
+          width: 100% !important;
+          min-width: 0 !important;
+        }
+
+        .sidebar.is-collapsed .sidebar-collapsible {
+          display: none;
+        }
+
+        .sidebar.is-collapsed .sidebar-header-text p {
+          display: none;
+        }
+
+        .sidebar.is-collapsed .sidebar-header {
+          border-bottom: none;
+          padding-bottom: 0.85rem;
+        }
+
+        .main-body {
+          flex-direction: column;
+        }
+
+        .panel-participants {
+          width: 100% !important;
+          min-width: 0 !important;
+        }
+
+        .main-body.is-collapsed .panel-participants .panel-collapsible {
+          opacity: 1;
+          pointer-events: auto;
+          visibility: visible;
+        }
+
+        .main-body.is-collapsed .panel-participants .panel-header h3 {
+          display: block;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <button
+      class="menu-toggle-btn home-btn"
+      id="homeBtn"
+      type="button"
+      title="صفحه اصلی"
+      aria-label="صفحه اصلی"
+    >
+      🏠
+    </button>
+
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-header-text">
+          <h1>🥋 مسابقات کیوکوشین</h1>
+          <p>انتخاب رده سنی و وزن</p>
+        </div>
+        <button
+          class="menu-toggle-btn sidebar-collapse-btn"
+          id="toggleSidebar"
+          type="button"
+          title="جمع کردن منو"
+          aria-label="جمع کردن منو"
+        >
+          ☰
+        </button>
+      </div>
+      <div class="sidebar-collapsible">
+        <nav class="tree" id="tree"></nav>
+        <div class="sidebar-footer">
+          <div class="save-status">
+            <span class="dot" id="saveDot"></span>
+            <span id="saveStatusText">داده‌ها داخل همین فایل HTML</span>
+          </div>
+          <button
+            class="btn btn-primary btn-link"
+            id="linkFileBtn"
+            type="button"
+          >
+            💾 فعال‌سازی ذخیره در فایل
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="main-header" id="mainHeader" style="display: none">
+        <div class="main-header-text">
+          <h2 id="headerTitle"></h2>
+          <div class="breadcrumb" id="headerBreadcrumb"></div>
+        </div>
+      </div>
+
+      <div class="empty-state" id="welcome">
+        <div class="icon">🥋</div>
+        <p>
+          از منوی سمت راست یک رده سنی و وزن را انتخاب کنید تا شرکت‌کنندگان را
+          اضافه کرده و قرعه‌کشی انجام دهید.
+        </p>
+      </div>
+
+      <div class="main-body" id="mainBody" style="display: none">
+        <!-- راست: شرکت‌کنندگان -->
+        <section class="panel panel-participants">
+          <div class="panel-header">
+            <h3>👤 شرکت‌کنندگان</h3>
+            <button
+              class="btn btn-ghost collapse-btn"
+              id="toggleParticipants"
+              type="button"
+              title="جمع کردن"
+            >
+              ◂
+            </button>
+          </div>
+          <div class="panel-body panel-collapsible">
+            <form class="add-form" id="addForm">
+              <input
+                type="text"
+                id="nameInput"
+                placeholder="نام شرکت‌کننده..."
+                autocomplete="off"
+              />
+              <button type="submit" class="btn btn-primary">افزودن</button>
+            </form>
+            <ul class="participant-list" id="participantList"></ul>
+          </div>
+        </section>
+
+        <!-- چپ: قرعه‌کشی -->
+        <section class="panel panel-draw">
+          <div class="panel-header">
+            <h3>⚔️ قرعه‌کشی مسابقات</h3>
+            <div class="match-actions">
+              <button class="btn btn-primary" id="drawBtn">🎲 قرعه‌کشی</button>
+            </div>
+          </div>
+          <div class="panel-body" id="matchPanel">
+            <p class="match-hint">
+              با کلیک روی «قرعه‌کشی»، شرکت‌کنندگان به‌صورت تصادفی دو به دو مقابل
+              هم قرار می‌گیرند.
+            </p>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <div class="modal-overlay" id="confirmModal" aria-hidden="true">
+      <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modalTitle"
+      >
+        <div class="modal-icon" id="modalIcon">⚠️</div>
+        <h4 id="modalTitle">تغییر نتیجه قرعه‌کشی</h4>
+        <p id="modalMessage"></p>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="modalCancel" type="button">
+            انصراف
+          </button>
+          <button class="btn btn-primary" id="modalConfirm" type="button">
+            بله، ادامه بده
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- داده‌های مسابقات — این بخش با هر تغییر به‌روز و داخل فایل ذخیره می‌شود -->
+    <script type="application/json" id="saved-state">
+{
+  "participants": {
+    "children": {
+      "w45": [
+        "امین",
+        "علی",
+        "حسین",
+        "رضا",
+        "متین",
+        "جواد",
+        "احسان"
+      ],
+      "w55": [
+        "۱",
+        "۲",
+        "۳",
+        "۴",
+        "۵",
+        "۶"
+      ],
+      "w65": [
+        "محمد امین"
+      ]
+    },
+    "adults": {
+      "w65": [],
+      "w75": [],
+      "w90": [],
+      "w90p": []
+    }
+  },
+  "selected": null,
+  "matches": {
+    "children:w45": [
+      {
+        "a": "امین",
+        "b": "حسین"
+      },
+      {
+        "a": "متین",
+        "b": "احسان"
+      },
+      {
+        "a": "رضا",
+        "b": "جواد"
+      },
+      {
+        "a": "علی",
+        "b": null
+      }
+    ]
+  }
+}
+    </script>
+
+    <script>
+      const STORAGE_KEY = "kyokushin-tournament-v1";
+      const IDB_NAME = "kyokushin-fs";
+      const IDB_STORE = "handles";
+
+      // ── Default structure ──
+      function createDefaultData() {
+        return {
+          children: {
+            label: "کودکان",
+            weights: {
+              w45: { label: "زیر ۴۵ کیلوگرم", participants: [] },
+              w55: { label: "زیر ۵۵ کیلوگرم", participants: [] },
+              w65: { label: "زیر ۶۵ کیلوگرم", participants: [] },
+            },
+          },
+          adults: {
+            label: "بزرگسالان",
+            weights: {
+              w65: { label: "زیر ۶۵ کیلوگرم", participants: [] },
+              w75: { label: "زیر ۷۵ کیلوگرم", participants: [] },
+              w90: { label: "زیر ۹۰ کیلوگرم", participants: [] },
+              w90p: { label: "بالای ۹۰ کیلوگرم", participants: [] },
+            },
+          },
+        };
+      }
+
+      let tournamentData = createDefaultData();
+      let selected = null;
+      let savedMatches = {}; // { "children:w45": [{ a, b }, ...] }
+      let fileHandle = null;
+
+      const savedStateEl = document.getElementById("saved-state");
+      const saveDotEl = document.getElementById("saveDot");
+      const saveStatusTextEl = document.getElementById("saveStatusText");
+      const linkFileBtn = document.getElementById("linkFileBtn");
+
+      // ── Serialize / deserialize state (stored in #saved-state inside HTML) ──
+      function categoryKey(ageKey, weightKey) {
+        return `${ageKey}:${weightKey}`;
+      }
+
+      function getCurrentMatches() {
+        if (!selected) return [];
+        return (
+          savedMatches[categoryKey(selected.ageKey, selected.weightKey)] ?? []
+        );
+      }
+
+      function setCurrentMatches(matches) {
+        if (!selected) return;
+        const key = categoryKey(selected.ageKey, selected.weightKey);
+        if (matches.length === 0) delete savedMatches[key];
+        else savedMatches[key] = matches;
+      }
+
+      function buildStatePayload() {
+        const participants = {};
+        for (const [ageKey, ageGroup] of Object.entries(tournamentData)) {
+          participants[ageKey] = {};
+          for (const [weightKey, weight] of Object.entries(ageGroup.weights)) {
+            participants[ageKey][weightKey] = weight.participants;
+          }
+        }
+        return { participants, selected, matches: savedMatches };
+      }
+
+      function applyStatePayload(state) {
+        tournamentData = createDefaultData();
+        selected = null;
+        savedMatches = {};
+        if (!state?.participants) return;
+
+        for (const [ageKey, ageGroup] of Object.entries(tournamentData)) {
+          for (const [weightKey, weight] of Object.entries(ageGroup.weights)) {
+            const list = state.participants[ageKey]?.[weightKey];
+            if (Array.isArray(list)) weight.participants = list;
+          }
+        }
+
+        if (state.matches && typeof state.matches === "object") {
+          savedMatches = state.matches;
+        }
+
+        const sel = state.selected;
+        if (
+          sel?.ageKey &&
+          sel?.weightKey &&
+          tournamentData[sel.ageKey]?.weights[sel.weightKey]
+        ) {
+          selected = sel;
+        }
+      }
+
+      function readEmbeddedState() {
+        try {
+          return JSON.parse(savedStateEl.textContent);
+        } catch (_) {
+          return null;
+        }
+      }
+
+      function writeEmbeddedState() {
+        const json = JSON.stringify(buildStatePayload(), null, 2);
+        savedStateEl.textContent = "\n" + json + "\n    ";
+      }
+
+      function updateSaveStatus(linked) {
+        saveDotEl.classList.toggle("live", true); // localStorage همیشه فعال است
+        if (linked) {
+          saveStatusTextEl.textContent = "ذخیره خودکار: مرورگر + فایل HTML";
+          linkFileBtn.textContent = "💾 ذخیره دستی در فایل";
+        } else if ("showOpenFilePicker" in window) {
+          saveStatusTextEl.textContent = "ذخیره خودکار در مرورگر فعال است";
+          linkFileBtn.textContent = "💾 ذخیره داخل فایل HTML";
+        } else {
+          saveStatusTextEl.textContent = "ذخیره خودکار در مرورگر فعال است";
+        }
+      }
+
+      // ── File System Access: write JSON block back into app.html on disk ──
+      function openIDB() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open(IDB_NAME, 1);
+          req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function storeFileHandle(handle) {
+        const db = await openIDB();
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction(IDB_STORE, "readwrite");
+          tx.objectStore(IDB_STORE).put(handle, "file");
+          tx.oncomplete = resolve;
+          tx.onerror = () => reject(tx.error);
+        });
+      }
+
+      async function getStoredFileHandle() {
+        try {
+          const db = await openIDB();
+          return await new Promise((resolve, reject) => {
+            const tx = db.transaction(IDB_STORE, "readonly");
+            const req = tx.objectStore(IDB_STORE).get("file");
+            req.onsuccess = () => resolve(req.result ?? null);
+            req.onerror = () => reject(req.error);
+          });
+        } catch (_) {
+          return null;
+        }
+      }
+
+      async function ensureFilePermission(handle, explain = false) {
+        if (!handle) return false;
+        let perm = await handle.queryPermission({ mode: "readwrite" });
+        if (perm === "granted") return true;
+
+        if (explain) {
+          const ok = await showConfirmModal(FILE_PERMISSION_MSG, {
+            title: "اجازه ویرایش فایل",
+            icon: "🔐",
+            confirmText: "متوجه شدم، ادامه بده",
+            cancelText: "فعلاً نه",
+          });
+          if (!ok) return false;
+        }
+
+        perm = await handle.requestPermission({ mode: "readwrite" });
+        return perm === "granted";
+      }
+
+      async function persistToFile() {
+        if (!fileHandle) return false;
+        if (!(await ensureFilePermission(fileHandle, true))) {
+          fileHandle = null;
+          updateSaveStatus(false);
+          return false;
+        }
+
+        writeEmbeddedState();
+        const stateJson = savedStateEl.textContent.trim();
+        const file = await fileHandle.getFile();
+        let html = await file.text();
+        html = html.replace(
+          /(<script type="application\/json" id="saved-state">)[\s\S]*?(<\/script>)/,
+          `$1\n${stateJson}\n    $2`,
+        );
+
+        const writable = await fileHandle.createWritable();
+        await writable.write(html);
+        await writable.close();
+        return true;
+      }
+
+      async function linkFile() {
+        if (!("showOpenFilePicker" in window)) {
+          await showConfirmModal(
+            "مرورگر شما از ذخیره مستقیم در فایل پشتیبانی نمی‌کند. لطفاً از Chrome یا Edge استفاده کنید.",
+            {
+              title: "مرورگر پشتیبانی نمی‌کند",
+              icon: "ℹ️",
+              confirmText: "متوجه شدم",
+              hideCancel: true,
+            },
+          );
+          return;
+        }
+
+        try {
+          if (!fileHandle) {
+            const proceed = await showConfirmModal(FILE_PICKER_MSG, {
+              title: "ذخیره در فایل HTML",
+              icon: "💾",
+              confirmText: "متوجه شدم، ادامه بده",
+              cancelText: "فعلاً نه",
+            });
+            if (!proceed) return;
+
+            [fileHandle] = await window.showOpenFilePicker({
+              types: [{ accept: { "text/html": [".html"] } }],
+              multiple: false,
+            });
+            await storeFileHandle(fileHandle);
+          }
+
+          if (await persistToFile()) {
+            updateSaveStatus(true);
+          }
+        } catch (err) {
+          if (err.name !== "AbortError") {
+            await showConfirmModal("خطا در ذخیره فایل: " + err.message, {
+              title: "خطا",
+              icon: "❌",
+              confirmText: "باشه",
+              hideCancel: true,
+            });
+          }
+        }
+      }
+
+      async function initFileAccess() {
+        updateSaveStatus(false);
+
+        if (!("showOpenFilePicker" in window)) {
+          linkFileBtn.style.display = "none";
+          return;
+        }
+
+        fileHandle = await getStoredFileHandle();
+        if (fileHandle && (await ensureFilePermission(fileHandle, true))) {
+          updateSaveStatus(true);
+          await persistToFile();
+        } else {
+          fileHandle = null;
+        }
+      }
+
+      function saveData() {
+        writeEmbeddedState();
+        try {
+          localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify(buildStatePayload()),
+          );
+        } catch (_) {}
+
+        persistToFile().then((ok) => {
+          if (ok) updateSaveStatus(true);
+        });
+      }
+
+      function loadData() {
+        applyStatePayload(readEmbeddedState());
+
+        // اگر فایل خالی بود ولی localStorage داشت، از آن بازیابی کن
+        const hasAny =
+          Object.values(tournamentData).some((g) =>
+            Object.values(g.weights).some((w) => w.participants.length > 0),
+          ) || selected;
+
+        if (!hasAny) {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+              applyStatePayload(JSON.parse(raw));
+              writeEmbeddedState();
+            }
+          } catch (_) {}
+        }
+      }
+
+      // ── DOM refs ──
+      const treeEl = document.getElementById("tree");
+      const welcomeEl = document.getElementById("welcome");
+      const mainHeaderEl = document.getElementById("mainHeader");
+      const mainBodyEl = document.getElementById("mainBody");
+      const headerTitleEl = document.getElementById("headerTitle");
+      const headerBreadcrumb = document.getElementById("headerBreadcrumb");
+      const addForm = document.getElementById("addForm");
+      const nameInput = document.getElementById("nameInput");
+      const participantList = document.getElementById("participantList");
+      const matchPanel = document.getElementById("matchPanel");
+      const drawBtn = document.getElementById("drawBtn");
+      const homeBtn = document.getElementById("homeBtn");
+      const toggleParticipantsBtn =
+        document.getElementById("toggleParticipants");
+      const sidebarEl = document.getElementById("sidebar");
+      const toggleSidebarBtn = document.getElementById("toggleSidebar");
+      const confirmModal = document.getElementById("confirmModal");
+      const modalIcon = document.getElementById("modalIcon");
+      const modalTitle = document.getElementById("modalTitle");
+      const modalMessage = document.getElementById("modalMessage");
+      const modalConfirm = document.getElementById("modalConfirm");
+      const modalCancel = document.getElementById("modalCancel");
+
+      let confirmResolve = null;
+
+      const MODAL_DEFAULTS = {
+        title: "تغییر نتیجه قرعه‌کشی",
+        icon: "⚠️",
+        confirmText: "بله، ادامه بده",
+        cancelText: "انصراف",
+        hideCancel: false,
+      };
+
+      function showConfirmModal(message, options = {}) {
+        const opts = { ...MODAL_DEFAULTS, ...options };
+        return new Promise((resolve) => {
+          confirmResolve = resolve;
+          modalIcon.textContent = opts.icon;
+          modalTitle.textContent = opts.title;
+          modalMessage.textContent = message;
+          modalConfirm.textContent = opts.confirmText;
+          modalCancel.textContent = opts.cancelText;
+          modalCancel.style.display = opts.hideCancel ? "none" : "";
+          confirmModal.classList.add("is-open");
+          confirmModal.setAttribute("aria-hidden", "false");
+          modalConfirm.focus();
+        });
+      }
+
+      function closeConfirmModal(result) {
+        confirmModal.classList.remove("is-open");
+        confirmModal.setAttribute("aria-hidden", "true");
+        if (confirmResolve) {
+          confirmResolve(result);
+          confirmResolve = null;
+        }
+      }
+
+      modalConfirm.addEventListener("click", () => closeConfirmModal(true));
+      modalCancel.addEventListener("click", () => closeConfirmModal(false));
+      confirmModal.addEventListener("click", (e) => {
+        if (e.target === confirmModal) closeConfirmModal(false);
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && confirmModal.classList.contains("is-open")) {
+          closeConfirmModal(false);
+        }
+      });
+
+      async function confirmIfDrawExists(message) {
+        if (!hasExistingDraw()) return true;
+        return showConfirmModal(message);
+      }
+
+      const DRAW_CHANGE_MSG =
+        "نتیجه قرعه‌کشی این دسته قبلاً انجام شده است. با ادامه، قرعه‌کشی فعلی حذف و نتیجه جدید جایگزین می‌شود. مطمئن هستید؟";
+
+      const FILE_PICKER_MSG =
+        "برای ذخیره اسامی و نتایج قرعه‌کشی داخل خود فایل app.html، مرورگر از شما می‌خواهد این فایل را انتخاب کنید.\n\nدر پنجره بعدی همین فایل (app.html) را انتخاب کنید. این کار فقط یک‌بار لازم است و بعد از آن ذخیره به‌صورت خودکار انجام می‌شود.";
+
+      const FILE_PERMISSION_MSG =
+        "مرورگر برای نوشتن تغییرات روی فایل app.html نیاز به اجازه شما دارد.\n\nدر پنجره بعدی مرورگر، گزینه «اجازه دادن» یا Allow را بزنید تا اطلاعات داخل فایل ذخیره شود.";
+
+      function hasExistingDraw() {
+        return getCurrentMatches().length > 0;
+      }
+
+      toggleParticipantsBtn.addEventListener("click", () => {
+        const collapsed = mainBodyEl.classList.toggle("is-collapsed");
+        toggleParticipantsBtn.title = collapsed ? "باز کردن" : "جمع کردن";
+      });
+
+      function setSidebarCollapsed(collapsed) {
+        sidebarEl.classList.toggle("is-collapsed", collapsed);
+        const title = collapsed ? "باز کردن منو" : "جمع کردن منو";
+        toggleSidebarBtn.title = title;
+        toggleSidebarBtn.setAttribute("aria-label", title);
+      }
+
+      function toggleSidebar() {
+        setSidebarCollapsed(!sidebarEl.classList.contains("is-collapsed"));
+      }
+
+      toggleSidebarBtn.addEventListener("click", toggleSidebar);
+
+      // ── Helpers ──
+      function getCategory(ageKey, weightKey) {
+        return tournamentData[ageKey]?.weights[weightKey] ?? null;
+      }
+
+      function shuffle(arr) {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      }
+
+      // ── Build sidebar tree ──
+      function renderTree() {
+        treeEl.innerHTML = "";
+        for (const [ageKey, ageGroup] of Object.entries(tournamentData)) {
+          const group = document.createElement("div");
+          group.className = "tree-group";
+
+          const title = document.createElement("div");
+          title.className = "tree-group-title";
+          title.innerHTML = `<span class="arrow">▼</span> ${ageGroup.label}`;
+          title.addEventListener("click", () =>
+            group.classList.toggle("collapsed"),
+          );
+          group.appendChild(title);
+
+          const children = document.createElement("div");
+          children.className = "tree-children";
+
+          for (const [weightKey, weight] of Object.entries(ageGroup.weights)) {
+            const btn = document.createElement("button");
+            btn.className = "tree-item";
+            btn.dataset.age = ageKey;
+            btn.dataset.weight = weightKey;
+            const isActive =
+              selected?.ageKey === ageKey && selected?.weightKey === weightKey;
+            if (isActive) btn.classList.add("active");
+            btn.innerHTML = `${weight.label} <span class="count">${weight.participants.length}</span>`;
+            btn.addEventListener("click", () =>
+              selectCategory(ageKey, weightKey),
+            );
+            children.appendChild(btn);
+          }
+
+          group.appendChild(children);
+          treeEl.appendChild(group);
+        }
+      }
+
+      function showWelcome() {
+        welcomeEl.style.display = "flex";
+        mainHeaderEl.style.display = "none";
+        mainBodyEl.style.display = "none";
+        homeBtn.classList.remove("is-visible");
+      }
+
+      function goHome() {
+        selected = null;
+        saveData();
+        renderTree();
+        showWelcome();
+      }
+
+      homeBtn.addEventListener("click", goHome);
+
+      // ── Select category ──
+      function selectCategory(ageKey, weightKey) {
+        selected = { ageKey, weightKey };
+        saveData();
+        renderTree();
+        renderMain();
+      }
+
+      function renderMain() {
+        if (!selected) {
+          showWelcome();
+          return;
+        }
+
+        const ageGroup = tournamentData[selected.ageKey];
+        const category = getCategory(selected.ageKey, selected.weightKey);
+
+        welcomeEl.style.display = "none";
+        mainHeaderEl.style.display = "block";
+        mainBodyEl.style.display = "flex";
+        homeBtn.classList.add("is-visible");
+
+        headerTitleEl.textContent = category.label;
+        headerBreadcrumb.textContent = `${ageGroup.label} › ${category.label}`;
+
+        renderParticipants();
+        renderMatches();
+      }
+
+      // ── Participants ──
+      function renderParticipants() {
+        const category = getCategory(selected.ageKey, selected.weightKey);
+        participantList.innerHTML = "";
+
+        if (category.participants.length === 0) {
+          participantList.innerHTML =
+            '<li class="list-empty">هنوز شرکت‌کننده‌ای اضافه نشده</li>';
+          drawBtn.disabled = true;
+          return;
+        }
+
+        drawBtn.disabled = category.participants.length < 2;
+
+        category.participants.forEach((name, i) => {
+          const li = document.createElement("li");
+          li.innerHTML = `
+          <span class="index">${i + 1}</span>
+          <span class="name">${escapeHtml(name)}</span>
+          <button class="btn btn-ghost" data-index="${i}" title="حذف">✕</button>
+        `;
+          li.querySelector("button").addEventListener("click", () =>
+            removeParticipant(i),
+          );
+          participantList.appendChild(li);
+        });
+      }
+
+      function escapeHtml(str) {
+        const d = document.createElement("div");
+        d.textContent = str;
+        return d.innerHTML;
+      }
+
+      addForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!selected) return;
+        const name = nameInput.value.trim();
+        if (!name) return;
+
+        const category = getCategory(selected.ageKey, selected.weightKey);
+        if (category.participants.includes(name)) {
+          nameInput.focus();
+          return;
+        }
+
+        if (!(await confirmIfDrawExists(DRAW_CHANGE_MSG))) return;
+
+        category.participants.push(name);
+        nameInput.value = "";
+        nameInput.focus();
+        setCurrentMatches([]);
+        saveData();
+        renderTree();
+        renderParticipants();
+        renderMatches();
+      });
+
+      async function removeParticipant(index) {
+        if (!(await confirmIfDrawExists(DRAW_CHANGE_MSG))) return;
+
+        const category = getCategory(selected.ageKey, selected.weightKey);
+        category.participants.splice(index, 1);
+        setCurrentMatches([]);
+        saveData();
+        renderTree();
+        renderParticipants();
+        renderMatches();
+      }
+
+      // ── Draw matches ──
+      drawBtn.addEventListener("click", async () => {
+        if (!selected) return;
+        if (!(await confirmIfDrawExists(DRAW_CHANGE_MSG))) return;
+
+        const category = getCategory(selected.ageKey, selected.weightKey);
+        const shuffled = shuffle(category.participants);
+        const matches = [];
+
+        for (let i = 0; i < shuffled.length; i += 2) {
+          if (i + 1 < shuffled.length) {
+            matches.push({ a: shuffled[i], b: shuffled[i + 1] });
+          } else {
+            matches.push({ a: shuffled[i], b: null });
+          }
+        }
+
+        setCurrentMatches(matches);
+        saveData();
+        renderMatches();
+      });
+
+      function renderMatches() {
+        const lastMatches = getCurrentMatches();
+        if (lastMatches.length === 0) {
+          matchPanel.innerHTML =
+            '<p class="match-hint">با کلیک روی «قرعه‌کشی»، شرکت‌کنندگان به‌صورت تصادفی دو به دو مقابل هم قرار می‌گیرند.</p>';
+          return;
+        }
+
+        matchPanel.innerHTML = '<ul class="match-list"></ul>';
+        const list = matchPanel.querySelector(".match-list");
+
+        lastMatches.forEach((match, i) => {
+          const li = document.createElement("li");
+
+          if (match.b === null) {
+            li.className = "match-card bye-card";
+            li.innerHTML = `
+            <div class="match-num">مسابقه ${i + 1}</div>
+            <div class="fighters">
+              <span class="fighter single">${escapeHtml(match.a)} — استراحت</span>
+            </div>
+          `;
+          } else {
+            li.className = "match-card";
+            li.innerHTML = `
+            <div class="match-num">مسابقه ${i + 1}</div>
+            <div class="fighters">
+              <span class="fighter">${escapeHtml(match.a)}</span>
+              <span class="vs">در مقابل</span>
+              <span class="fighter">${escapeHtml(match.b)}</span>
+            </div>
+          `;
+          }
+
+          list.appendChild(li);
+        });
+      }
+
+      linkFileBtn.addEventListener("click", linkFile);
+
+      // ── Init ──
+      loadData();
+      renderTree();
+      if (selected) renderMain();
+      else showWelcome();
+      initFileAccess();
+    </script>
+  </body>
+</html>
