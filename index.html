@@ -708,6 +708,14 @@
         .main-body.is-collapsed .panel-participants .panel-header h3 {
           display: block;
         }
+
+        body:has(.home-btn.is-visible) .sidebar-header {
+          padding-left: 4.5rem;
+        }
+
+        .sidebar.is-collapsed .sidebar-header {
+          justify-content: flex-end;
+        }
       }
     </style>
   </head>
@@ -841,59 +849,42 @@
 
     <!-- داده‌های مسابقات — این بخش با هر تغییر به‌روز و داخل فایل ذخیره می‌شود -->
     <script type="application/json" id="saved-state">
-{
-  "participants": {
-    "children": {
-      "w45": [
-        "امین",
-        "علی",
-        "حسین",
-        "رضا",
-        "متین",
-        "جواد",
-        "احسان"
-      ],
-      "w55": [
-        "۱",
-        "۲",
-        "۳",
-        "۴",
-        "۵",
-        "۶"
-      ],
-      "w65": [
-        "محمد امین"
-      ]
-    },
-    "adults": {
-      "w65": [],
-      "w75": [],
-      "w90": [],
-      "w90p": []
-    }
-  },
-  "selected": null,
-  "matches": {
-    "children:w45": [
       {
-        "a": "امین",
-        "b": "حسین"
-      },
-      {
-        "a": "متین",
-        "b": "احسان"
-      },
-      {
-        "a": "رضا",
-        "b": "جواد"
-      },
-      {
-        "a": "علی",
-        "b": null
+        "participants": {
+          "children": {
+            "w45": ["امین", "علی", "حسین", "رضا", "متین", "جواد", "احسان"],
+            "w55": ["۱", "۲", "۳", "۴", "۵", "۶"],
+            "w65": ["محمد امین"]
+          },
+          "adults": {
+            "w65": [],
+            "w75": [],
+            "w90": [],
+            "w90p": []
+          }
+        },
+        "selected": null,
+        "matches": {
+          "children:w45": [
+            {
+              "a": "امین",
+              "b": "حسین"
+            },
+            {
+              "a": "متین",
+              "b": "احسان"
+            },
+            {
+              "a": "رضا",
+              "b": "جواد"
+            },
+            {
+              "a": "علی",
+              "b": null
+            }
+          ]
+        }
       }
-    ]
-  }
-}
     </script>
 
     <script>
